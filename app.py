@@ -14,12 +14,20 @@ def wrong_add_index():
     st.session_state.incorrect_data = pd.concat([st.session_state.incorrect_data, new_row.to_frame().T], ignore_index=True)
     st.session_state.index = min(st.session_state.index + 1, len(df) - 1)
 
+def uncertain_add_index():
+    new_row = df.iloc[st.session_state.index].copy()
+    new_row['index'] = st.session_state.index
+    st.session_state.uncertain_data = pd.concat([st.session_state.incorrect_data, new_row.to_frame().T], ignore_index=True)
+    st.session_state.index = min(st.session_state.index + 1, len(df) - 1)
+
 def sub_index():
     st.session_state.index = max(st.session_state.index - 1, 0)
     if st.session_state.index in st.session_state.correct_data['index'].values:
         st.session_state.correct_data = st.session_state.correct_data[st.session_state.correct_data['index'] != st.session_state.index]
     if st.session_state.index in st.session_state.incorrect_data['index'].values:
         st.session_state.incorrect_data = st.session_state.incorrect_data[st.session_state.incorrect_data['index'] != st.session_state.index]
+    if st.session_state.index in st.session_state.uncertain_data['index'].values:
+        st.session_state.uncertain_data = st.session_state.uncertain_data[st.session_state.uncertain_data['index'] != st.session_state.index]
 
 def file_upload():
     if 'index' in st.session_state:
@@ -28,6 +36,8 @@ def file_upload():
         del st.session_state['correct_data']
     if 'incorrect_data' in st.session_state:
         del st.session_state['incorrect_data']
+    if 'uncertain_data' in st.session_state:
+        del st.session_state['uncertain_data']
 
 
 uploaded_file = st.file_uploader("Choose a file",on_change=file_upload)
@@ -44,7 +54,8 @@ if uploaded_file is not None:
         st.session_state.correct_data = pd.DataFrame(columns=['index'] + list(df.columns))
     if 'incorrect_data' not in st.session_state:
         st.session_state.incorrect_data = pd.DataFrame(columns=['index'] + list(df.columns))
-
+    if 'uncertain_data' not in st.session_state:
+        st.session_state.uncertain_data = pd.DataFrame(columns=['index'] + list(df.columns))
 
     # 显示当前行的数据，只显示选中的列
     st.write("数据预览：")
@@ -57,7 +68,7 @@ if uploaded_file is not None:
 
     # 创建列布局
     col1, col2 = st.columns(2)
-    col3, col4 = st.columns(2)
+    col3, col4,col5 = st.columns(3)
 
     # 处理键盘事件
     with col1:
@@ -74,7 +85,8 @@ if uploaded_file is not None:
     with col4:
         st.button('打标错误', on_click = wrong_add_index)
 
-
+    with col5:
+        st.button('不确定', on_click = uncertain_add_index)
 
     # 下载打标数据
     st.write("打标正确的数据：")
@@ -87,6 +99,12 @@ if uploaded_file is not None:
     incorrect_file_name = st.text_input("输入错误的数据文件名", value="incorrect_data.csv")
     st.download_button("下载打标错误的数据", st.session_state.incorrect_data.to_csv(index=False), file_name=incorrect_file_name)
     
+    st.write("不确定的数据：")
+    st.dataframe(st.session_state.uncertain_data)
+    uncertain_file_name = st.text_input("输入不确定的数据文件名", value="uncertain_data.csv")
+    st.download_button("下载不确定的数据", st.session_state.uncertain_data.to_csv(index=False), file_name=uncertain_file_name)
+
+
     # 显示打标进度
     st.sidebar.title("打标进度")
     total_rows = len(df) if uploaded_file is not None else 0
