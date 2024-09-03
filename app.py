@@ -5,19 +5,22 @@ from io import StringIO
 def correct_add_index():
     new_row = df.iloc[st.session_state.index].copy()
     new_row['index'] = st.session_state.index
-    st.session_state.correct_data = pd.concat([st.session_state.correct_data, new_row.to_frame().T], ignore_index=True)
+    if not st.session_state.index in st.session_state.correct_data['index'].values:
+        st.session_state.correct_data = pd.concat([st.session_state.correct_data, new_row.to_frame().T], ignore_index=True)
     st.session_state.index = min(st.session_state.index + 1, len(df) - 1)
 
 def wrong_add_index():
     new_row = df.iloc[st.session_state.index].copy()
     new_row['index'] = st.session_state.index
-    st.session_state.incorrect_data = pd.concat([st.session_state.incorrect_data, new_row.to_frame().T], ignore_index=True)
+    if not st.session_state.index in st.session_state.incorrect_data['index'].values:
+        st.session_state.incorrect_data = pd.concat([st.session_state.incorrect_data, new_row.to_frame().T], ignore_index=True)
     st.session_state.index = min(st.session_state.index + 1, len(df) - 1)
 
 def uncertain_add_index():
     new_row = df.iloc[st.session_state.index].copy()
     new_row['index'] = st.session_state.index
-    st.session_state.uncertain_data = pd.concat([st.session_state.incorrect_data, new_row.to_frame().T], ignore_index=True)
+    if not st.session_state.index in st.session_state.uncertain_data['index'].values:
+        st.session_state.uncertain_data = pd.concat([st.session_state.uncertain_data, new_row.to_frame().T], ignore_index=True)
     st.session_state.index = min(st.session_state.index + 1, len(df) - 1)
 
 def sub_index():
@@ -28,6 +31,10 @@ def sub_index():
         st.session_state.incorrect_data = st.session_state.incorrect_data[st.session_state.incorrect_data['index'] != st.session_state.index]
     if st.session_state.index in st.session_state.uncertain_data['index'].values:
         st.session_state.uncertain_data = st.session_state.uncertain_data[st.session_state.uncertain_data['index'] != st.session_state.index]
+
+def add_index():
+    st.session_state.index = min(st.session_state.index + 1, len(df) - 1)
+
 
 def file_upload():
     if 'index' in st.session_state:
@@ -43,7 +50,7 @@ def file_upload():
 uploaded_file = st.file_uploader("Choose a file",on_change=file_upload)
 if uploaded_file is not None:
     # To read file as bytes:
-    df = pd.read_csv(uploaded_file)
+    df = pd.read_csv(uploaded_file, nrows=501)
     # 让用户选择要显示的列
     selected_columns = st.multiselect("选择要显示的列", df.columns)
     
@@ -74,10 +81,8 @@ if uploaded_file is not None:
     with col1:
         st.button('上一个', on_click = sub_index)
 
-    # with col2:
-    #     if st.button('下一个 (D)'):
-    #         st.session_state.index = min(st.session_state.index + 1, len(df) - 1)
-            #st.rerun()
+    with col2:
+        st.button('下一个', on_click = add_index)
     with col3:
         st.button('打标正确', on_click = correct_add_index)
 
